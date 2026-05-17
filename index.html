@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced To-Do List</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+      transition: background 0.5s, color 0.5s;
+    }
+
+    body.dark {
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #eee;
+    }
+
+    .todo-container {
+      background: rgba(255, 255, 255, 0.95);
+      width: 500px;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+      transition: background 0.5s, color 0.5s;
+    }
+
+    body.dark .todo-container {
+      background: rgba(30, 30, 30, 0.95);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 26px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .dark-toggle {
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      border: none;
+      transition: 0.3s;
+    }
+
+    body.dark .dark-toggle {
+      background: #eee;
+      color: #111;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .input-group input,
+    .input-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .input-group button {
+      padding: 10px;
+      border: none;
+      background: #667eea;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: 0.3s;
+    }
+
+    .input-group button:hover {
+      background: #5563c1;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .progress-container {
+      background: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      height: 18px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #28a745;
+      transition: width 0.3s;
+    }
+
+    ul {
+      list-style: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    ul li {
+      background: #f8f9fa;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      transition: 0.3s;
+    }
+
+    body.dark ul li {
+      background: #333;
+      color: #eee;
+    }
+
+    ul li.completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .task-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .buttons button {
+      border: none;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .complete-btn {
+      background: #28a745;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+    }
+
+    .complete-btn:hover {
+      background: #1e7e34;
+    }
+
+    .delete-btn:hover {
+      background: #a71d2a;
+    }
+
+    .meta {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #555;
+    }
+
+    body.dark .meta {
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+  <div class="todo-container">
+    <div class="top-bar">
+      <h2>📌 Advanced To-Do List</h2>
+      <button class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark</button>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="taskInput" placeholder="Enter a new task...">
+      <select id="category">
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Study">Study</option>
+      </select>
+      <input type="date" id="dueDate">
+      <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 Search tasks...">
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    const taskInput = document.getElementById("taskInput");
+    const category = document.getElementById("category");
+    const dueDate = document.getElementById("dueDate");
+    const taskList = document.getElementById("taskList");
+    const progressBar = document.getElementById("progressBar");
+    const searchInput = document.getElementById("searchInput");
+
+    // Load tasks from localStorage
+    window.onload = function () {
+      let savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      savedTasks.forEach(task => renderTask(task.text, task.completed, task.category, task.dueDate));
+      updateProgress();
+    };
+
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (taskText === "") {
+        alert("Please enter a task!");
+        return;
+      }
+
+      renderTask(taskText, false, category.value, dueDate.value);
+      saveTasks();
+      taskInput.value = "";
+      dueDate.value = "";
+    }
+
+    function renderTask(taskText, isCompleted, taskCategory, taskDueDate) {
+      const li = document.createElement("li");
+      if (isCompleted) li.classList.add("completed");
+
+      const mainDiv = document.createElement("div");
+      mainDiv.classList.add("task-main");
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = taskText;
+
+      const buttonsDiv = document.createElement("div");
+      buttonsDiv.classList.add("buttons");
+
+      const completeBtn = document.createElement("button");
+      completeBtn.textContent = "✔";
+      completeBtn.classList.add("complete-btn");
+      completeBtn.onclick = () => {
+        li.classList.toggle("completed");
+        saveTasks();
+        updateProgress();
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "✖";
+      deleteBtn.classList.add("delete-btn");
+      deleteBtn.onclick = () => {
+        li.remove();
+        saveTasks();
+        updateProgress();
+      };
+
+      buttonsDiv.appendChild(completeBtn);
+      buttonsDiv.appendChild(deleteBtn);
+
+      mainDiv.appendChild(textSpan);
+      mainDiv.appendChild(buttonsDiv);
+
+      const meta = document.createElement("div");
+      meta.classList.add("meta");
+      meta.textContent = `Category: ${taskCategory} | Due: ${taskDueDate || "N/A"}`;
+
+      li.appendChild(mainDiv);
+      li.appendChild(meta);
+
+      taskList.appendChild(li);
+      updateProgress();
+    }
+
+    function saveTasks() {
+      let tasks = [];
+      document.querySelectorAll("#taskList li").forEach(li => {
+        tasks.push({
+          text: li.querySelector(".task-main span").textContent,
+          completed: li.classList.contains("completed"),
+          category: li.querySelector(".meta").textContent.split("|")[0].replace("Category:", "").trim(),
+          dueDate: li.querySelector(".meta").textContent.split("|")[1].replace("Due:", "").trim()
+        });
+      });
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function updateProgress() {
+      const total = document.querySelectorAll("#taskList li").length;
+      const completed = document.querySelectorAll("#taskList li.completed").length;
+      const percent = total ? (completed / total) * 100 : 0;
+      progressBar.style.width = percent + "%";
+    }
+
+    searchInput.addEventListener("input", () => {
+      const filter = searchInput.value.toLowerCase();
+      document.querySelectorAll("#taskList li").forEach(li => {
+        const text = li.querySelector(".task-main span").textContent.toLowerCase();
+        li.style.display = text.includes(filter) ? "block" : "none";
+      });
+    });
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+  </script>
+</body>
+</html>
