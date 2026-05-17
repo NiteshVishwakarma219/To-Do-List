@@ -37,8 +37,6 @@ It is built to strengthen key web development concepts such as:
 ## 📁 Project Structure
 To-Do-List/
 │── index.html
-│── style.css
-│── script.js
 │── README.md
 
 ---
